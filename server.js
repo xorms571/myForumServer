@@ -85,7 +85,7 @@ app.post('/api/posts', upload.single('file'), async (req, res) => {
   }
 
   console.log('File uploaded:', req.file); // Log the file details
-  const fileUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+  const fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
   
   const { title, content, username } = req.body;
   const newPost = new Post({ title, content, username, fileUrl });
