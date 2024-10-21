@@ -14,6 +14,15 @@ const app = express();
 app.use(cors());
 const PORT = process.env.PORT || 5000;
 
+//헤더에서 폰트 및 기타 리소스를 허용
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'; script-src 'self'; style-src 'self';"
+  );
+  next();
+});
+
 // Middleware
 app.use(express.json());
 // 정적 파일 제공 (uploads 폴더를 공개)
