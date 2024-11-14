@@ -11,13 +11,12 @@ const Post = require("./models/Post"); // Post 모델을 가져와서 MongoDB와
 const Comment = require("./models/Comment"); // Comment 모델을 가져와서 MongoDB와 연결
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
 const corsOptions = {
   origin: "https://myforumserver-production.up.railway.app",
   optionsSuccessStatus: 200,
 };
-app.use(cors(corsOptions));
-const PORT = process.env.PORT || 5000;
-
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -25,6 +24,7 @@ app.use((req, res, next) => {
   );
   next();
 });
+app.use(cors(corsOptions));
 app.use(express.json());
 const uploadsDir = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsDir));
