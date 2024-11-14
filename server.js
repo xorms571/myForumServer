@@ -15,10 +15,7 @@ const PORT = process.env.PORT || 5000;
 
 //헤더에서 폰트 및 기타 리소스를 허용
 app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'; script-src 'self'; style-src 'self';"
-  );
+  res.setHeader("Content-Security-Policy", "default-src 'none'; font-src 'self' https://myforumserver-production.up.railway.app;");
   next();
 });
 
