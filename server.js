@@ -91,7 +91,7 @@ app.post('/api/posts', upload.single('file'), async (req, res) => {
 
   try {
     const savedPost = await newPost.save();
-    res.status(201).json({ message: 'Post created successfully', post: savedPost, fileUrl });
+    res.status(201).json({ message: 'Post created successfully', post: savedPost });
   } catch (error) {
     console.error('Error saving post:', error);
     res.status(500).send({ error: error.message });
