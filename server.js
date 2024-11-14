@@ -11,13 +11,13 @@ const Post = require("./models/Post");
 const Comment = require("./models/Comment");
 const app = express();
 app.use(cors());
-const PORT = process.env.PORT || 5000; 
+const PORT = process.env.PORT || 5000;
 
 //헤더에서 폰트 및 기타 리소스를 허용
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; img-src 'self'; script-src 'self'; style-src 'self';"
+    "default-src 'self'; font-src 'self'; img-src 'self'; script-src 'self'; style-src 'self';"
   );
   next();
 });
@@ -79,12 +79,11 @@ app.get("/api/posts/:id", async (req, res) => {
 
 // API 엔드포인트 - 포스트 추가
 app.post("/api/posts", upload.single("file"), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).send("No file uploaded.");
-  }
+  let fileUrl = null;
 
-  console.log("File uploaded:", req.file); // Log the file details
-  const fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
+  if (req.file) {
+    fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
+  }
 
   const { title, content, username } = req.body;
   const newPost = new Post({ title, content, username, fileUrl });
