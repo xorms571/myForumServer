@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 5000;
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self' https://myforumserver-production.up.railway.app/uploads; script-src 'self'; style-src 'self';"
+    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self';"
   );
   next();
 });
