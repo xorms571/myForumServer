@@ -13,14 +13,6 @@ const Comment = require("./models/Comment"); // Comment 모델을 가져와서 M
 const app = express();
 app.use(cors());
 const PORT = process.env.PORT || 5000;
-
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'  https://myforumserver-production.up.railway.app; script-src 'self'  https://myforumserver-production.up.railway.app; style-src 'self';"
-  );
-  next();
-});
 app.use(express.json());
 const uploadsDir = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsDir));
