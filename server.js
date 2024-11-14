@@ -10,38 +10,26 @@ const User = require("./models/User"); // User 모델을 가져와서 MongoDB와
 const Post = require("./models/Post"); // Post 모델을 가져와서 MongoDB와 연결
 const Comment = require("./models/Comment"); // Comment 모델을 가져와서 MongoDB와 연결
 
-const app = express(); // Express 애플리케이션 인스턴스를 생성
-app.use(cors()); // 모든 도메인에서 API 호출을 허용하도록 CORS 설정
-const PORT = process.env.PORT || 5000; // 서버 포트 설정 (환경 변수에서 포트를 가져오고 없으면 5000 사용)
+const app = express();
+const corsOptions = {
+  origin: "https://myforumserver-production.up.railway.app",
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+const PORT = process.env.PORT || 5000;
 
-// 보안 헤더 설정 - 폰트와 리소스를 특정 도메인에서만 허용
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'; script-src 'self'; style-src 'self';"
+    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self' https://myforumserver-production.up.railway.app; script-src 'self'; style-src 'self';"
   );
-  next(); // 미들웨어가 끝나면 다음 작업으로 넘어가게 함
+  next();
 });
-
-// JSON 데이터 처리를 위한 미들웨어
 app.use(express.json());
-
-// 업로드 파일을 저장할 폴더를 공개 (정적 파일로 제공)
-const uploadsDir = path.join(__dirname, "uploads"); // __dirname => Node.js에서 제공하는 전역 변수로, 현재 실행 중인 파일의 디렉토리 경로
-// uploads라는 디렉토리의 경로를 정의하는 명령
-// path.join()은 여러 경로 조각을 결합하여 하나의 경로를 생성하는 Node.js의 path 모듈 함수
-// 여기서는 __dirname과 "uploads"를 결합하여 현재 디렉토리 안에 있는 uploads 폴더의 경로를 생성
-/* 예를 들어, server.js 파일이 /home/user/project 디렉토리 안에 있다면, 
-__dirname은 /home/user/project 값을 가집니다. */
-app.use("/uploads", express.static(uploadsDir)); // `/uploads` 경로에서 정적 파일을 제공
-// express.static()는 정적 파일을 제공하는 Express의 내장 미들웨어, 지정된 폴더에서 파일을 찾아 클라이언트에게 반환
+const uploadsDir = path.join(__dirname, "uploads");
+app.use("/uploads", express.static(uploadsDir));
 if (!fs.existsSync(uploadsDir)) {
-  // fs.existsSync => fs(파일 시스템) 모듈에서 제공하는 함수, 주어진 경로(uploadsDir)가 존재하는지 확인
-  // `uploads` 폴더가 없으면 생성
-  fs.mkdirSync(uploadsDir, { recursive: true }); // **"make directory"** mkdirSync => 새로운 디렉토리(폴더)를 생성 **Sync**는 동기 방식으로 작동함을 의미
-  // { recursive: true } 재귀적으로 폴더를 생성하라는 의미
-  // 상위 폴더들이 없더라도(예: path/to/uploads 같은 경로일 경우) 이 옵션이 있으면 필요한 상위 폴더들도 자동으로 생성
-  // 만약 path.join(__dirname, 'somefolder/uploads') 같은 구조라면, somefolder가 없을 경우 recursive: true 덕분에 somefolder와 uploads가 함께 생성됩니다.
+  fs.mkdirSync(uploadsDir, { recursive: true });
   console.log("Uploads directory created");
 }
 
