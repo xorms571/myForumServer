@@ -12,11 +12,6 @@ const Comment = require("./models/Comment"); // Comment 모델을 가져와서 M
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-const corsOptions = {
-  origin: "https://myforumserver-production.up.railway.app",
-  optionsSuccessStatus: 200,
-};
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
@@ -24,7 +19,7 @@ app.use((req, res, next) => {
   );
   next();
 });
-app.use(cors(corsOptions));
+app.use(cors);
 app.use(express.json());
 const uploadsDir = path.join(__dirname, "uploads");
 app.use("/uploads", express.static(uploadsDir));
