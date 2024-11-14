@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const fs = require("fs");
 const mongoose = require("mongoose");
@@ -11,13 +11,22 @@ const Post = require("./models/Post");
 const Comment = require("./models/Comment");
 const app = express();
 app.use(cors());
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; 
+
+//헤더에서 폰트 및 기타 리소스를 허용
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'; script-src 'self'; style-src 'self';"
+  );
+  next();
+});
 
 // Middleware
 app.use(express.json());
 // 정적 파일 제공 (uploads 폴더를 공개)
 const uploadsDir = path.join(__dirname, "uploads");
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log("Uploads directory created");
@@ -36,7 +45,7 @@ mongoose
 // 파일 저장 설정
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'uploads')); // Ensure the path is correct
+    cb(null, path.join(__dirname, "uploads")); // Ensure the path is correct
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
@@ -69,12 +78,12 @@ app.get("/api/posts/:id", async (req, res) => {
 });
 
 // API 엔드포인트 - 포스트 추가
-app.post('/api/posts', upload.single('file'), async (req, res) => {
+app.post("/api/posts", upload.single("file"), async (req, res) => {
   if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+    return res.status(400).send("No file uploaded.");
   }
 
-  console.log('File uploaded:', req.file); // Log the file details
+  console.log("File uploaded:", req.file); // Log the file details
   const fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
 
   const { title, content, username } = req.body;
@@ -82,13 +91,14 @@ app.post('/api/posts', upload.single('file'), async (req, res) => {
 
   try {
     const savedPost = await newPost.save();
-    res.status(201).json({ message: 'Post created successfully', post: savedPost });
+    res
+      .status(201)
+      .json({ message: "Post created successfully", post: savedPost });
   } catch (error) {
-    console.error('Error saving post:', error);
+    console.error("Error saving post:", error);
     res.status(500).send({ error: error.message });
   }
 });
-
 
 // API 엔드포인트 - 포스트 수정
 app.put("/api/posts/:id", async (req, res) => {
