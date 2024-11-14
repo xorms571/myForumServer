@@ -1,75 +1,101 @@
-// server/server.js
-const express = require("express");
-const cors = require("cors");
-const multer = require("multer");
-const path = require("path");
-const bcrypt = require('bcryptjs');
-const jwt = require("jsonwebtoken");
-const fs = require("fs");
-const mongoose = require("mongoose");
-const User = require("./models/User");
-const Post = require("./models/Post");
-const Comment = require("./models/Comment");
-const app = express();
-app.use(cors());
-const PORT = process.env.PORT || 5000;
+const express = require("express"); // Express 모듈을 가져와서 서버를 쉽게 설정할 수 있게 해줌
+const cors = require("cors"); // CORS(Cross-Origin Resource Sharing)를 허용하여 외부 도메인에서 API 호출을 허용
+const multer = require("multer"); // 파일 업로드를 관리하는 라이브러리
+const path = require("path"); // 경로 관리를 위한 Node.js 모듈
+const bcrypt = require("bcryptjs"); // 비밀번호를 암호화하기 위한 라이브러리
+const jwt = require("jsonwebtoken"); // JWT를 사용하여 인증을 처리하는 라이브러리
+const fs = require("fs"); // 파일 시스템 관련 작업을 위한 기본 Node.js 모듈
+const mongoose = require("mongoose"); // MongoDB와 상호작용하기 위한 라이브러리
+const User = require("./models/User"); // User 모델을 가져와서 MongoDB와 연결
+const Post = require("./models/Post"); // Post 모델을 가져와서 MongoDB와 연결
+const Comment = require("./models/Comment"); // Comment 모델을 가져와서 MongoDB와 연결
 
-//헤더에서 폰트 및 기타 리소스를 허용
+const app = express(); // Express 애플리케이션 인스턴스를 생성
+app.use(cors()); // 모든 도메인에서 API 호출을 허용하도록 CORS 설정
+const PORT = process.env.PORT || 5000; // 서버 포트 설정 (환경 변수에서 포트를 가져오고 없으면 5000 사용)
+
+// 보안 헤더 설정 - 폰트와 리소스를 특정 도메인에서만 허용
 app.use((req, res, next) => {
   res.setHeader(
     "Content-Security-Policy",
     "default-src 'self'; font-src 'self' https://myforumserver-production.up.railway.app; img-src 'self'; script-src 'self'; style-src 'self';"
   );
-  next();
+  next(); // 미들웨어가 끝나면 다음 작업으로 넘어가게 함
 });
 
-// Middleware
+// JSON 데이터 처리를 위한 미들웨어
 app.use(express.json());
-// 정적 파일 제공 (uploads 폴더를 공개)
-const uploadsDir = path.join(__dirname, "uploads");
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 업로드 파일을 저장할 폴더를 공개 (정적 파일로 제공)
+const uploadsDir = path.join(__dirname, "uploads"); // __dirname => Node.js에서 제공하는 전역 변수로, 현재 실행 중인 파일의 디렉토리 경로
+// uploads라는 디렉토리의 경로를 정의하는 명령
+// path.join()은 여러 경로 조각을 결합하여 하나의 경로를 생성하는 Node.js의 path 모듈 함수
+// 여기서는 __dirname과 "uploads"를 결합하여 현재 디렉토리 안에 있는 uploads 폴더의 경로를 생성
+/* 예를 들어, server.js 파일이 /home/user/project 디렉토리 안에 있다면, 
+__dirname은 /home/user/project 값을 가집니다. */
+app.use("/uploads", express.static(uploadsDir)); // `/uploads` 경로에서 정적 파일을 제공
+// express.static()는 정적 파일을 제공하는 Express의 내장 미들웨어, 지정된 폴더에서 파일을 찾아 클라이언트에게 반환
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+  // fs.existsSync => fs(파일 시스템) 모듈에서 제공하는 함수, 주어진 경로(uploadsDir)가 존재하는지 확인
+  // `uploads` 폴더가 없으면 생성
+  fs.mkdirSync(uploadsDir, { recursive: true }); // **"make directory"** mkdirSync => 새로운 디렉토리(폴더)를 생성 **Sync**는 동기 방식으로 작동함을 의미
+  // { recursive: true } 재귀적으로 폴더를 생성하라는 의미
+  // 상위 폴더들이 없더라도(예: path/to/uploads 같은 경로일 경우) 이 옵션이 있으면 필요한 상위 폴더들도 자동으로 생성
+  // 만약 path.join(__dirname, 'somefolder/uploads') 같은 구조라면, somefolder가 없을 경우 recursive: true 덕분에 somefolder와 uploads가 함께 생성됩니다.
   console.log("Uploads directory created");
 }
 
-// MongoDB URI
+// MongoDB URI 설정
 const uri =
   "mongodb+srv://xormsowo:wlfkf571@cluster0.mfvhg.mongodb.net/forum?retryWrites=true&w=majority&appName=Cluster0";
 
-// Mongoose 연결
+// Mongoose로 MongoDB와 연결
 mongoose
-  .connect(uri, {})
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+  .connect(uri, {}) // MongoDB URI로 연결
+  .then(() => console.log("MongoDB connected")) // 연결 성공 시 메시지 출력
+  .catch((err) => console.error("MongoDB connection error:", err)); // 연결 실패 시 에러 출력
 
-// 파일 저장 설정
+// 파일 업로드 설정 (Multer 사용)
 const storage = multer.diskStorage({
+  // diskStorage는 파일을 디스크에 저장하는 방식에 대한 설정을 정의
+  // 두 가지 주요 옵션인 destination(저장 경로)과 filename(저장할 파일 이름)을 정의하여 파일이 어디에 어떻게 저장될지를 설정
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'uploads')); // Ensure the path is correct
+    // (파일 저장 경로)
+    /* req는 HTTP 요청 객체, 
+    file은 업로드된 파일 정보, 
+    cb는 콜백 함수 */
+    cb(null, uploadsDir); // 파일 저장 경로 설정
+    // null(에러 없음)과 함께 파일을 저장할 경로를 반환
+    // cb(null, ...)에서 **null**은 에러가 없음을 나타내는 값
+    // 첫 번째 인자로 에러가 전달되지 않으면(즉, null이 전달되면) 작업이 정상적으로 진행
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
+    // 파일 이름을 현재 시간으로 설정하여 고유하게 만듦
+    // originalname은 업로드된 파일의 원래 이름
+    //**path.extname()**은 파일의 확장자 부분을 추출하는 함수
+    // example.png라면, .png 확장자를 반환
   },
 });
 
+// Multer 인스턴스 생성
 const upload = multer({ storage: storage });
 
-// API 엔드포인트 - 모든 포스트 가져오기
+// 모든 게시물을 가져오는 API 엔드포인트
 app.get("/api/posts", async (req, res) => {
   try {
-    const allPosts = await Post.find(); // Mongoose를 사용하여 모든 포스트 가져오기
-    res.json(allPosts);
+    const allPosts = await Post.find(); // 모든 게시물 검색
+    res.json(allPosts); // JSON 형식으로 반환
   } catch (error) {
     console.error("Error fetching posts:", error);
-    res.status(500).send({ error: error.message });
+    res.status(500).send({ error: error.message }); // 에러 발생 시 500 상태 코드 반환
   }
 });
 
 // API 엔드포인트 - 특정 포스트 가져오기
 app.get("/api/posts/:id", async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id);
+    const post = await Post.findById(req.params.id); // ID로 게시물 찾기
     if (!post) return res.status(404).send("Post not found");
     res.json(post);
   } catch (error) {
@@ -79,26 +105,26 @@ app.get("/api/posts/:id", async (req, res) => {
 });
 
 // API 엔드포인트 - 포스트 추가
-app.post('/api/posts', upload.single('file'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
+app.post("/api/posts", upload.single("file"), async (req, res) => {
+  const { title, content, username } = req.body;
+  let fileUrl = null;
+  if (req.file) {
+    fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
+    console.log("File uploaded:", req.file);
   }
 
-  console.log('File uploaded:', req.file); // Log the file details
-  const fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
-  
-  const { title, content, username } = req.body;
   const newPost = new Post({ title, content, username, fileUrl });
 
   try {
     const savedPost = await newPost.save();
-    res.status(201).json({ message: 'Post created successfully', post: savedPost, fileUrl });
+    res
+      .status(201)
+      .json({ message: "Post created successfully", post: savedPost, fileUrl });
   } catch (error) {
-    console.error('Error saving post:', error);
+    console.error("Error saving post:", error);
     res.status(500).send({ error: error.message });
   }
 });
-
 
 // API 엔드포인트 - 포스트 수정
 app.put("/api/posts/:id", async (req, res) => {
@@ -154,10 +180,8 @@ app.post("/api/auth/login", async (req, res) => {
   const { username, password } = req.body;
   const user = await User.findOne({ username });
   if (!user) return res.status(400).send("Invalid credentials");
-
   const isValid = await bcrypt.compare(password, user.password);
   if (!isValid) return res.status(400).send("Invalid credentials");
-
   const token = jwt.sign({ userId: user._id }, "your_jwt_secret");
   res.json({ token, username: user.username });
 });
