@@ -90,13 +90,14 @@ app.get("/api/posts/:id", async (req, res) => {
 
 // API 엔드포인트 - 포스트 추가
 app.post("/api/posts", upload.single("file"), async (req, res) => {
-  const { title, content, username } = req.body;
-  let fileUrl = null;
-  if (req.file) {
-    fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
-    console.log("File uploaded:", req.file);
+  if (!req.file) {
+    return res.status(400).send("No file uploaded.");
   }
 
+  console.log("File uploaded:", req.file); // Log the file details
+  const fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
+
+  const { title, content, username } = req.body;
   const newPost = new Post({ title, content, username, fileUrl });
 
   try {
