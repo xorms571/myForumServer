@@ -81,7 +81,7 @@ app.get("/api/posts/:id", async (req, res) => {
 app.post("/api/posts", upload.single("file"), async (req, res) => {
   let fileUrl = null;
   if (req.file) {
-    fileUrl = `https://myforumserver-production.up.railway.app/uploads/${req.file.filename}`;
+    fileUrl = `https://render.com/docs/web-services#port-binding/uploads/${req.file.filename}`;
   }
   const { title, content, username } = req.body;
   const newPost = new Post({ title, content, username, fileUrl });
